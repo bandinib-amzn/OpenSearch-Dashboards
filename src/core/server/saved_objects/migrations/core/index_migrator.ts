@@ -56,6 +56,7 @@ export class IndexMigrator {
    * @returns {Promise<MigrationResult>}
    */
   public async migrate(): Promise<MigrationResult> {
+    this.opts.log.info('I am coming here multiple times');
     const context = await migrationContext(this.opts);
 
     return coordinateMigration({
