@@ -30,6 +30,7 @@
 
 import { Subject, Observable } from 'rxjs';
 import { first, filter, take, switchMap } from 'rxjs/operators';
+import sqlite3 from 'sqlite3';
 import { CoreService } from '../../types';
 import {
   SavedObjectsClient,
@@ -367,10 +368,15 @@ export class SavedObjectsService
       .toPromise();
     const client = opensearch.client;
 
+    const sqlClient = new sqlite3.Database(
+      '/home/mihson/storage/OpenSearch-Dashboards-1/kibana.db',
+      (err) => this.logger.info(`${err}`)
+    );
     const migrator = this.createMigrator(
       opensearchDashboardsConfig,
       this.config.migration,
       opensearch.client,
+      sqlClient,
       migrationsRetryDelay
     );
 
@@ -470,6 +476,7 @@ export class SavedObjectsService
     opensearchDashboardsConfig: OpenSearchDashboardsConfigType,
     savedObjectsConfig: SavedObjectsMigrationConfigType,
     client: IClusterClient,
+    sqlClient: any,
     migrationsRetryDelay?: number
   ): IOpenSearchDashboardsMigrator {
     return new OpenSearchDashboardsMigrator({
@@ -483,6 +490,7 @@ export class SavedObjectsService
         this.logger,
         migrationsRetryDelay
       ),
+      sqlite3: sqlClient,
     });
   }
 }
