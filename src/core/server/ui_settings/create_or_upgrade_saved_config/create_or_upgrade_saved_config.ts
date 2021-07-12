@@ -57,7 +57,7 @@ export async function createOrUpgradeSavedConfig(
 
   // default to the attributes of the upgradeableConfig if available
   const attributes = defaults(
-    { buildNum },
+    { buildNum: 1235 },
     upgradeableConfig ? (upgradeableConfig.attributes as any) : {}
   );
 
