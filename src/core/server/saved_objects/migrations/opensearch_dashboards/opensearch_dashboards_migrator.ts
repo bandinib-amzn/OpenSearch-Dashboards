@@ -189,61 +189,53 @@ export class OpenSearchDashboardsMigrator {
         convertToAliasScript: indexMap[index].script,
       });
     });
-    const dataTypesMapping = {
-      integer: 'INTEGER',
-      boolean: 'NUMERIC',
-      keyword: 'TEXT',
-      text: 'TEXT',
-      long: 'NUMERIC',
-      date: 'INTEGER',
-    };
-    function obsKeysToString(o, k, sep) {
-      return k.map((key) => `${key} ${o[key]}`).join(sep);
-    }
-    const parseMappingOne = (mapping: any, prefix = '') => {
-      let map = {};
-      Object.keys(mapping).map((column: string) => {
-        if (dataTypesMapping[mapping[column].type]) {
-          const columnName = prefix ? `${prefix}.${column}` : column;
-          map[columnName.replace('.', '_').replace('-', '_')] =
-            dataTypesMapping[mapping[column].type];
-        }
-        // this.log.info(`May be i am here columb ${column} ${JSON.stringify(map, null,4)}`);
-        if (mapping[column].properties) {
-          map = { ...map, ...parseMappingOne(mapping[column].properties, column) };
-        }
-      });
-      this.log.debug(`May be i am here column ${JSON.stringify(map, null, 4)}`);
-      return map;
-    };
+    // const dataTypesMapping = {
+    //   integer: 'INTEGER',
+    //   boolean: 'NUMERIC',
+    //   keyword: 'TEXT',
+    //   text: 'TEXT',
+    //   long: 'NUMERIC',
+    //   date: 'INTEGER',
+    // };
+    // function obsKeysToString(o, k, sep) {
+    //   return k.map(key => `${key} ${o[key]}`).join(sep);
+    // }
+    // let parseMappingOne = (mapping: any, prefix = '') => {
+    //   let map = {};
+    //   Object.keys(mapping).map((column: string) => {
+    //     if(dataTypesMapping[mapping[column].type]) {
+    //       const columnName = prefix ? `${prefix}.${column}` : column;
+    //       map[columnName.replace('.', '_').replace('-', '_')] = dataTypesMapping[mapping[column].type];
+    //     }
+    //     // this.log.info(`May be i am here columb ${column} ${JSON.stringify(map, null,4)}`);
+    //     if (mapping[column].properties) {
+    //       map = { ...map, ...parseMappingOne(mapping[column].properties, column) };
+    //     }
+    //   });
+    //   this.log.debug(`May be i am here column ${JSON.stringify(map, null,4)}`);
+    //   return map;
+    // };
 
-    Object.keys(indexMap).map((index) => {
-      this.sqlite3.serialize(() =>
-        Object.keys(indexMap[index].typeMappings).map((table) => {
-          // this.log.info(`Creating table ${table}`);
-          const mapping = parseMappingOne(indexMap[index].typeMappings[table].properties);
-          // this.log.info(`Creating table ${obsKeysToString(mapping, Object.keys(mapping), ',')}`);
-          this.log.info(
-            `Creating table stmt CREATE TABLE ${table.replace('-', '_')} (${obsKeysToString(
-              mapping,
-              Object.keys(mapping),
-              ','
-            )})`
-          );
-          this.sqlite3.run(
-            `CREATE TABLE ${table.replace('-', '_')} ( ${obsKeysToString(
-              mapping,
-              Object.keys(mapping),
-              ','
-            )} )`,
-            (e) => {
-              if (e) {
-                this.log.info(`Something went wrong ${e}`);
-              }
-            }
-          );
-        })
-      );
+    // Object.keys(indexMap).map((index) => {
+    //   this.sqlite3.serialize(() =>
+    //     Object.keys(indexMap[index].typeMappings).map((table) => {
+    //       // this.log.info(`Creating table ${table}`);
+    //       const mapping = parseMappingOne(indexMap[index].typeMappings[table].properties);
+    //       // this.log.info(`Creating table ${obsKeysToString(mapping, Object.keys(mapping), ',')}`);
+    //       this.log.info(`Creating table stmt CREATE TABLE ${table.replace('-', '_')} (${obsKeysToString(mapping, Object.keys(mapping), ',')})`);
+    //       this.sqlite3.run(`CREATE TABLE ${table.replace('-', '_')} ( ${obsKeysToString(mapping, Object.keys(mapping), ',')} )`, (e) => {
+    //           if(e) {
+    //             this.log.info(`Something went wrong ${e}`)
+    //           }
+    //       }
+    //       );
+    //     })
+    //   );
+    // });
+    this.sqlite3.run('CREATE TABLE kibana (id TEXT, body JSON, updated_at TEXT)', (e): void => {
+      if (e) {
+        this.log.info(`Something went wrong ${e}`);
+      }
     });
     return Promise.all(migrators.map((migrator) => migrator.migrate()));
   }

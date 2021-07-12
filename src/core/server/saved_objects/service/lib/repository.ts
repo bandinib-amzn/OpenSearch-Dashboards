@@ -9,6 +9,8 @@
  * GitHub history for details.
  */
 
+/* eslint-disable no-console */
+
 /*
  * Licensed to Elasticsearch B.V. under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -187,7 +189,7 @@ export class SavedObjectsRepository {
       serializer,
       allowedTypes,
       client,
-      sqlite3,
+      sqlClient,
     });
   }
 
@@ -307,13 +309,18 @@ export class SavedObjectsRepository {
       body: raw._source,
       ...(overwrite && version ? decodeRequestVersion(version) : {}),
     };
-    // eslint-disable-next-line no-console
-    console.log('requestParams', JSON.stringify(requestParams));
+    // console.trace(`requestParams INSERT INTO kibana (id, body, updated_at) values (${requestParams.id}, json('${JSON.stringify(
+    //   requestParams.body
+    // ')}), '${time}')`);
     const { body } =
       id && overwrite
         ? await this.client.index(requestParams)
         : await this.client.create(requestParams);
-
+    this.sqlClient.run(
+      `INSERT INTO kibana(id, body, updated_at) VALUES('${
+        requestParams.id
+      }', json('${JSON.stringify(requestParams.body)}'), '${time}')`
+    );
     return this._rawToSavedObject<T>({
       ...raw,
       ...body,
@@ -973,7 +980,18 @@ export class SavedObjectsRepository {
       },
       { ignore: [404] }
     );
-
+    this.sqlClient.all(
+      `SELECT id,body FROM kibana WHERE id="${this._serializer.generateRawId(
+        namespace,
+        type,
+        id
+      )}"`,
+      (err, sqlResp) => {
+        console.log('sqlResp', JSON.stringify(sqlResp));
+      }
+    );
+    console.log('esResp', JSON.stringify(body));
+    const docNotFound = body.found === false;
     const indexNotFound = statusCode === 404;
     if (
       !isFoundGetResponse(body) ||
@@ -1057,6 +1075,12 @@ export class SavedObjectsRepository {
       },
       { ignore: [404] }
     );
+    this.sqlClient.run(
+      `UPDATE kibana SET body = json_patch(body, '${JSON.stringify(
+        doc
+      )}') WHERE id = '${this._serializer.generateRawId(namespace, type, id)}'`
+    );
+    console.log(`Doc to be updated is ${JSON.stringify(doc)}`);
 
     if (statusCode === 404) {
       // see "404s from missing index" above
