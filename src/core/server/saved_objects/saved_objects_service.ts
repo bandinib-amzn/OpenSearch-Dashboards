@@ -30,7 +30,8 @@
 
 import { Subject, Observable } from 'rxjs';
 import { first, filter, take, switchMap } from 'rxjs/operators';
-import sqlite3 from 'sqlite3';
+import * as sqlite3 from 'sqlite3';
+import { Database, open } from 'sqlite';
 import { CoreService } from '../../types';
 import {
   SavedObjectsClient,
@@ -367,16 +368,16 @@ export class SavedObjectsService
       .pipe(first())
       .toPromise();
     const client = opensearch.client;
+    const sqliteClient = await open({
+      filename: '/home/mihson/storage/OpenSearch-Dashboards-1/kibana.db',
+      driver: sqlite3.Database,
+    });
 
-    const sqlClient = new sqlite3.Database(
-      '/home/mihson/storage/OpenSearch-Dashboards-1/kibana.db',
-      (err) => this.logger.info(`${err}`)
-    );
     const migrator = this.createMigrator(
       opensearchDashboardsConfig,
       this.config.migration,
       opensearch.client,
-      sqlClient,
+      sqliteClient,
       migrationsRetryDelay
     );
 
@@ -433,7 +434,7 @@ export class SavedObjectsService
         this.typeRegistry,
         opensearchDashboardsConfig.index,
         opensearchClient,
-        sqlClient,
+        sqliteClient,
         includedHiddenTypes
       );
     };
@@ -477,7 +478,7 @@ export class SavedObjectsService
     opensearchDashboardsConfig: OpenSearchDashboardsConfigType,
     savedObjectsConfig: SavedObjectsMigrationConfigType,
     client: IClusterClient,
-    sqlClient: any,
+    sqliteClient: Database,
     migrationsRetryDelay?: number
   ): IOpenSearchDashboardsMigrator {
     return new OpenSearchDashboardsMigrator({
@@ -491,7 +492,7 @@ export class SavedObjectsService
         this.logger,
         migrationsRetryDelay
       ),
-      sqlite3: sqlClient,
+      sqliteClient,
     });
   }
 }

@@ -204,6 +204,7 @@
     "rxjs": "^6.5.5",
     "semver": "^5.7.0",
     "source-map-support": "^0.5.19",
+    "sqlite": "^4.0.23",
     "sqlite3": "^5.0.2",
     "symbol-observable": "^1.2.0",
     "tar": "^6.1.11",

@@ -36,7 +36,7 @@
 import { OpenSearchDashboardsConfigType } from 'src/core/server/opensearch_dashboards_config';
 import { BehaviorSubject } from 'rxjs';
 
-import sqllite3 from 'sqlite3';
+import sqlite3 from 'sqlite3';
 import { Logger } from '../../../logging';
 import { IndexMapping, SavedObjectsTypeMappingDefinitions } from '../../mappings';
 import { SavedObjectUnsanitizedDoc, SavedObjectsSerializer } from '../../serialization';
@@ -47,6 +47,7 @@ import { createIndexMap } from '../core/build_index_map';
 import { SavedObjectsMigrationConfigType } from '../../saved_objects_config';
 import { ISavedObjectTypeRegistry } from '../../saved_objects_type_registry';
 import { SavedObjectsType } from '../../types';
+import { Database } from 'sqlite';
 
 export interface OpenSearchDashboardsMigratorOptions {
   client: MigrationOpenSearchClient;
@@ -55,7 +56,7 @@ export interface OpenSearchDashboardsMigratorOptions {
   opensearchDashboardsConfig: OpenSearchDashboardsConfigType;
   opensearchDashboardsVersion: string;
   logger: Logger;
-  sqlite3: sqllite3.Database;
+  sqliteClient: Database;
 }
 
 export type IOpenSearchDashboardsMigrator = Pick<
@@ -73,7 +74,7 @@ export interface OpenSearchDashboardsMigratorStatus {
  */
 export class OpenSearchDashboardsMigrator {
   private readonly client: MigrationOpenSearchClient;
-  private readonly sqlite3: sqllite3.Database;
+  private readonly sqliteClient: Database;
   private readonly savedObjectsConfig: SavedObjectsMigrationConfigType;
   private readonly documentMigrator: VersionedTransformer;
   private readonly opensearchDashboardsConfig: OpenSearchDashboardsConfigType;
@@ -97,10 +98,10 @@ export class OpenSearchDashboardsMigrator {
     savedObjectsConfig,
     opensearchDashboardsVersion,
     logger,
-    sqlite3,
+    sqliteClient,
   }: OpenSearchDashboardsMigratorOptions) {
     this.client = client;
-    this.sqlite3 = sqlite3;
+    this.sqliteClient = sqliteClient;
     this.opensearchDashboardsConfig = opensearchDashboardsConfig;
     this.savedObjectsConfig = savedObjectsConfig;
     this.typeRegistry = typeRegistry;
@@ -161,7 +162,7 @@ export class OpenSearchDashboardsMigrator {
     return this.status$.asObservable();
   }
 
-  private runMigrationsInternal() {
+  private async runMigrationsInternal() {
     const opensearchDashboardsIndexName = this.opensearchDashboardsConfig.index;
     this.log.debug(`Here is the index map ${JSON.stringify(this.mappingProperties, null, 4)}`);
     const indexMap = createIndexMap({
@@ -217,13 +218,13 @@ export class OpenSearchDashboardsMigrator {
     // };
 
     // Object.keys(indexMap).map((index) => {
-    //   this.sqlite3.serialize(() =>
+    //   this.sqliteClient.serialize(() =>
     //     Object.keys(indexMap[index].typeMappings).map((table) => {
     //       // this.log.info(`Creating table ${table}`);
     //       const mapping = parseMappingOne(indexMap[index].typeMappings[table].properties);
     //       // this.log.info(`Creating table ${obsKeysToString(mapping, Object.keys(mapping), ',')}`);
     //       this.log.info(`Creating table stmt CREATE TABLE ${table.replace('-', '_')} (${obsKeysToString(mapping, Object.keys(mapping), ',')})`);
-    //       this.sqlite3.run(`CREATE TABLE ${table.replace('-', '_')} ( ${obsKeysToString(mapping, Object.keys(mapping), ',')} )`, (e) => {
+    //       this.sqliteClient.run(`CREATE TABLE ${table.replace('-', '_')} ( ${obsKeysToString(mapping, Object.keys(mapping), ',')} )`, (e) => {
     //           if(e) {
     //             this.log.info(`Something went wrong ${e}`)
     //           }
@@ -232,11 +233,7 @@ export class OpenSearchDashboardsMigrator {
     //     })
     //   );
     // });
-    this.sqlite3.run('CREATE TABLE kibana (id TEXT, body JSON, updated_at TEXT)', (e): void => {
-      if (e) {
-        this.log.info(`Something went wrong ${e}`);
-      }
-    });
+    await this.sqliteClient.run('CREATE TABLE IF NOT EXISTS kibana (id TEXT, body JSON, updated_at TEXT)')
     return Promise.all(migrators.map((migrator) => migrator.migrate()));
   }
 

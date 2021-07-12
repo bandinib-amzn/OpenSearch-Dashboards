@@ -37,6 +37,7 @@ import {
 import { loggingSystemMock } from '../../../logging/logging_system.mock';
 import { SavedObjectTypeRegistry } from '../../saved_objects_type_registry';
 import { SavedObjectsType } from '../../types';
+import { Database } from 'sqlite';
 
 const createRegistry = (types: Array<Partial<SavedObjectsType>>) => {
   const registry = new SavedObjectTypeRegistry();
@@ -186,6 +187,7 @@ const mockOptions = () => {
       skip: false,
     },
     client: opensearchClientMock.createOpenSearchClient(),
+    sqliteClient: {} as Database,
   };
   return options;
 };

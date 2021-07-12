@@ -33,7 +33,7 @@
 import { omit } from 'lodash';
 import type { opensearchtypes } from '@opensearch-project/opensearch';
 import uuid from 'uuid';
-import sqlite3 from 'sqlite3';
+import * as sqlite3 from 'sqlite3';
 import type { ISavedObjectTypeRegistry } from '../../saved_objects_type_registry';
 import { OpenSearchClient, DeleteDocumentResponse } from '../../../opensearch/';
 import { getRootPropertiesObjects, IndexMapping } from '../../mappings';
@@ -87,6 +87,7 @@ import {
   FIND_DEFAULT_PER_PAGE,
   SavedObjectsUtils,
 } from './utils';
+import { Database } from 'sqlite';
 
 // BEWARE: The SavedObjectClient depends on the implementation details of the SavedObjectsRepository
 // so any breaking changes to this repository are considered breaking changes to the SavedObjectsClient.
@@ -107,7 +108,7 @@ export interface SavedObjectsRepositoryOptions {
   serializer: SavedObjectsSerializer;
   migrator: IOpenSearchDashboardsMigrator;
   allowedTypes: string[];
-  sqlClient: sqlite3.Database;
+  sqliteClient: Database;
 }
 
 /**
@@ -147,7 +148,7 @@ export class SavedObjectsRepository {
   private _registry: SavedObjectTypeRegistry;
   private _allowedTypes: string[];
   private readonly client: RepositoryOpenSearchClient;
-  private readonly sqlClient: sqlite3.Database;
+  private readonly sqliteClient: Database;
   private _serializer: SavedObjectsSerializer;
 
   /**
@@ -163,7 +164,7 @@ export class SavedObjectsRepository {
     typeRegistry: SavedObjectTypeRegistry,
     indexName: string,
     client: OpenSearchClient,
-    sqlClient: sqlite3.Database,
+    sqliteClient: Database,
     includedHiddenTypes: string[] = [],
     injectedConstructor: any = SavedObjectsRepository
   ): ISavedObjectsRepository {
@@ -189,7 +190,7 @@ export class SavedObjectsRepository {
       serializer,
       allowedTypes,
       client,
-      sqlClient,
+      sqliteClient,
     });
   }
 
@@ -201,7 +202,7 @@ export class SavedObjectsRepository {
       typeRegistry,
       serializer,
       migrator,
-      sqlClient,
+      sqliteClient,
       allowedTypes = [],
     } = options;
 
@@ -217,7 +218,7 @@ export class SavedObjectsRepository {
     this._mappings = mappings;
     this._registry = typeRegistry;
     this.client = createRepositoryOpenSearchClient(client);
-    this.sqlClient = sqlClient;
+    this.sqliteClient = sqliteClient;
     if (allowedTypes.length === 0) {
       throw new Error('Empty or missing types for saved object repository!');
     }
@@ -316,7 +317,7 @@ export class SavedObjectsRepository {
       id && overwrite
         ? await this.client.index(requestParams)
         : await this.client.create(requestParams);
-    this.sqlClient.run(
+    await this.sqliteClient.exec(
       `INSERT INTO kibana(id, body, updated_at) VALUES('${
         requestParams.id
       }', json('${JSON.stringify(requestParams.body)}'), '${time}')`
@@ -980,17 +981,9 @@ export class SavedObjectsRepository {
       },
       { ignore: [404] }
     );
-    this.sqlClient.all(
-      `SELECT id,body FROM kibana WHERE id="${this._serializer.generateRawId(
-        namespace,
-        type,
-        id
-      )}"`,
-      (err, sqlResp) => {
-        console.log('sqlResp', JSON.stringify(sqlResp));
-      }
-    );
+    const sqlResp = await this.sqliteClient.get(`SELECT id,json(body) FROM kibana WHERE id="${this._serializer.generateRawId(namespace, type, id)}"`);
     console.log('esResp', JSON.stringify(body));
+    console.log('sqlResp', JSON.stringify(sqlResp));
     const docNotFound = body.found === false;
     const indexNotFound = statusCode === 404;
     if (
@@ -1075,7 +1068,7 @@ export class SavedObjectsRepository {
       },
       { ignore: [404] }
     );
-    this.sqlClient.run(
+    await this.sqliteClient.run(
       `UPDATE kibana SET body = json_patch(body, '${JSON.stringify(
         doc
       )}') WHERE id = '${this._serializer.generateRawId(namespace, type, id)}'`
