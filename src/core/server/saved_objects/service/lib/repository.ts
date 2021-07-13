@@ -792,6 +792,7 @@ export class SavedObjectsRepository {
     try {
       if (filter) {
         kueryNode = validateConvertFilterToKueryNode(allowedTypes, filter, this._mappings);
+        return SavedObjectsUtils.createEmptyFindResponse<T>(options);
       }
     } catch (e) {
       if (e.name === 'DQLSyntaxError') {
@@ -825,8 +826,32 @@ export class SavedObjectsRepository {
         }),
       },
     };
-    // console.log('opensearchOptions', JSON.stringify(opensearchOptions, null, 4))
-
+    console.trace('Options', JSON.stringify(options, null, 4));
+    console.trace('Allowed', JSON.stringify(allowedTypes, null, 4));
+    console.log('opensearchOptions', JSON.stringify(opensearchOptions, null, 4));
+    let sql = `SELECT id,body from kibana where type IN(${allowedTypes
+      // eslint-disable-next-line no-shadow
+      .map((type) => `'${type}'`)
+      .join(',')})`;
+    if (search) {
+      const buildLikeExpr = searchFields
+        ?.map(
+          (field) =>
+            `json_extract(json_each.value, '$.${field.split('^')[0]}') LIKE '%${search.replace(
+              '*',
+              ''
+            )}%'`
+        )
+        .join(' OR ');
+      // SELECT kibana.id, kibana.body from kibana, json_each(kibana.body) where json_valid(json_each.value) and json_extract(json_each.value, '$.title') like '%mihson%'
+      sql = `SELECT kibana.id, kibana.body from kibana, json_each(kibana.body) where kibana.type IN(${allowedTypes
+        // eslint-disable-next-line no-shadow
+        .map((type) => `'${type}'`)
+        .join(',')}) AND json_valid(json_each.value) AND (${buildLikeExpr})`;
+    }
+    console.log('statement', sql);
+    const results = await this.sqliteClient.all(sql);
+    console.log('results', JSON.stringify(results, null, 4));
     const { body, statusCode } = await this.client.search<SavedObjectsRawDocSource>(
       opensearchOptions,
       {
@@ -848,13 +873,15 @@ export class SavedObjectsRepository {
       page,
       per_page: perPage,
       total: body.hits.total,
-      saved_objects: body.hits.hits.map(
-        (hit: opensearchtypes.SearchHit<SavedObjectsRawDocSource>): SavedObjectsFindResult => ({
-          // @ts-expect-error @opensearch-project/opensearch _source is optional
-          ...this._rawToSavedObject(hit),
-          score: hit._score!,
-          // @ts-expect-error @opensearch-project/opensearch _source is optional
-          sort: hit.sort,
+      saved_objects: results.map(
+        (hit: any): SavedObjectsFindResult => ({
+          ...this._rawToSavedObject({
+            _source: JSON.parse(hit.body),
+            _id: hit.id,
+            _seq_no: 1,
+            _primary_term: 10,
+          }),
+          score: (hit as any)._score,
         })
       ),
     } as SavedObjectsFindResponse<T>;
