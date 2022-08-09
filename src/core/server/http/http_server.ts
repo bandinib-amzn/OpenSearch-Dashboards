@@ -113,6 +113,8 @@ export class HttpServer {
   }
 
   public isListening() {
+    // eslint-disable-next-line no-console
+    console.log('Insdie isListening');
     return this.server !== undefined && this.server.listener.listening;
   }
 
@@ -187,7 +189,6 @@ export class HttpServer {
         const opensearchDashboardsRouteOptions: OpenSearchDashboardsRouteOptions = {
           xsrfRequired: route.options.xsrfRequired ?? !isSafeMethod(route.method),
         };
-
         this.server.route({
           handler: route.handler,
           method: route.method,

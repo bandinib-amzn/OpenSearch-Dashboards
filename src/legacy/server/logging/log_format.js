@@ -164,6 +164,10 @@ export default class TransformObjStream extends Stream.Transform {
     } else {
       data.message = _.isString(event.data) ? event.data : inspect(event.data);
     }
+    console.log('Data Type', data.type);
+    console.log('Data timestamp', data.timestamp);
+    console.log('Data tags', data.tags);
+    console.log('Data message', data.message);
     return data;
   }
 }

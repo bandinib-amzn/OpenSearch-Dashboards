@@ -1,0 +1,53 @@
+version: '3'
+services:
+  opensearch-node1:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch-node1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=[]
+      - discovery.type=single-node
+        #- bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+      - /mnt/snapshots:/mnt/snapshots
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - opensearch-net
+  opensearch-dashboards:
+    #image: docker.opensearch.org/opensearch-dashboards/opensearch-dashboards:2.1.0-SNAPSHOT
+    image: opensearchproject/opensearch-dashboards:2.1.0
+    #image: docker.opensearch.org/opensearch-dashboards/opensearch-dashboards:2.1.1-SNAPSHOT
+    #image: 480670028690.dkr.ecr.us-west-2.amazonaws.com/osd-security:latest
+    container_name: opensearch-dashboards
+    ports:
+      - 5601:5601
+    expose:
+      - "5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["https://opensearch-node1:9200"]'
+      - 'SERVER_HOST="0.0.0.0"'
+      - 'SERVER_PORT=5601'
+      - 'OPENSEARCH_SSL_VERIFICATIONMODE=none'
+      - 'OPENSEARCH_USERNAME="kibanaserver"'
+      - 'OPENSEARCH_PASSWORD="kibanaserver"'
+      - 'OPENSEARCH_REQUESTHEADERWHITELIST=["authorization", "securitytenant"]'
+    networks:
+      - opensearch-net
+
+volumes:
+  opensearch-data1:
+
+networks:
+  opensearch-net:

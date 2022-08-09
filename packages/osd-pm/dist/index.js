@@ -10689,7 +10689,9 @@ function ncp (source, dest, options, callback) {
       transform(readStream, writeStream, file);
     } else {
       writeStream.on('open', function() {
-        readStream.pipe(writeStream);
+        readStream.pipe(writeStream).on('error', function(e) {
+            console.log('copyFile - readStream.pipe has error: ' + e.message)
+          });
       });
     }
     writeStream.once('finish', function() {
@@ -83770,7 +83772,9 @@ const cpFileAsync = async (source, destination, options, progressEmitter) => {
 	let updateStats = false;
 	try {
 		const writePromise = pEvent(write, 'close');
-		read.pipe(write);
+		read.pipe(write).on('error', function(e) {
+            console.log('cpFileAsync - read.pipe has error: ' + e.message)
+          });;
 		await writePromise;
 		progressEmitter.written = progressEmitter.size;
 		updateStats = true;

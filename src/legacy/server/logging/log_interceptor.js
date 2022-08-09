@@ -117,6 +117,10 @@ export class LogInterceptor extends Stream.Transform {
    *  @param {object} - log event
    */
   downgradeIfEpipe(event) {
+    console.log('Event Type', event.errorType);
+    console.log('Event Tags', event.tags);
+    console.log('Event Code', event.errorMessage);
+    console.log('Event Timestamp', event.timestamp);
     return downgradeIfErrorType('EPIPE', event);
   }
 
