@@ -37,6 +37,7 @@ import { OpenSearchDashboardsConfigType } from 'src/core/server/opensearch_dashb
 import { BehaviorSubject } from 'rxjs';
 
 import sqlite3 from 'sqlite3';
+import { Database } from 'sqlite';
 import { Logger } from '../../../logging';
 import { IndexMapping, SavedObjectsTypeMappingDefinitions } from '../../mappings';
 import { SavedObjectUnsanitizedDoc, SavedObjectsSerializer } from '../../serialization';
@@ -47,7 +48,6 @@ import { createIndexMap } from '../core/build_index_map';
 import { SavedObjectsMigrationConfigType } from '../../saved_objects_config';
 import { ISavedObjectTypeRegistry } from '../../saved_objects_type_registry';
 import { SavedObjectsType } from '../../types';
-import { Database } from 'sqlite';
 
 export interface OpenSearchDashboardsMigratorOptions {
   client: MigrationOpenSearchClient;
@@ -233,7 +233,9 @@ export class OpenSearchDashboardsMigrator {
     //     })
     //   );
     // });
-    await this.sqliteClient.run('CREATE TABLE IF NOT EXISTS kibana (id TEXT, body JSON, updated_at TEXT)')
+    await this.sqliteClient.run(
+      'CREATE TABLE IF NOT EXISTS kibana (id TEXT, body JSON, updated_at TEXT)'
+    );
     return Promise.all(migrators.map((migrator) => migrator.migrate()));
   }
 

@@ -34,6 +34,7 @@ import { omit } from 'lodash';
 import type { opensearchtypes } from '@opensearch-project/opensearch';
 import uuid from 'uuid';
 import * as sqlite3 from 'sqlite3';
+import { Database } from 'sqlite';
 import type { ISavedObjectTypeRegistry } from '../../saved_objects_type_registry';
 import { OpenSearchClient, DeleteDocumentResponse } from '../../../opensearch/';
 import { getRootPropertiesObjects, IndexMapping } from '../../mappings';
@@ -87,7 +88,6 @@ import {
   FIND_DEFAULT_PER_PAGE,
   SavedObjectsUtils,
 } from './utils';
-import { Database } from 'sqlite';
 
 // BEWARE: The SavedObjectClient depends on the implementation details of the SavedObjectsRepository
 // so any breaking changes to this repository are considered breaking changes to the SavedObjectsClient.
@@ -981,7 +981,13 @@ export class SavedObjectsRepository {
       },
       { ignore: [404] }
     );
-    const sqlResp = await this.sqliteClient.get(`SELECT id,json(body) FROM kibana WHERE id="${this._serializer.generateRawId(namespace, type, id)}"`);
+    const sqlResp = await this.sqliteClient.get(
+      `SELECT id,json(body) FROM kibana WHERE id="${this._serializer.generateRawId(
+        namespace,
+        type,
+        id
+      )}"`
+    );
     console.log('esResp', JSON.stringify(body));
     console.log('sqlResp', JSON.stringify(sqlResp));
     const docNotFound = body.found === false;
