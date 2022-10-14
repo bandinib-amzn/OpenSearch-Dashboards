@@ -369,7 +369,7 @@ export class SavedObjectsService
       .toPromise();
     const client = opensearch.client;
     const sqliteClient = await open({
-      filename: '/home/mihson/storage/OpenSearch-Dashboards-1/kibana.db',
+      filename: '/home/ubuntu/OSD/OpenSearch-Dashboards/kibana.db',
       driver: sqlite3.Database,
     });
 

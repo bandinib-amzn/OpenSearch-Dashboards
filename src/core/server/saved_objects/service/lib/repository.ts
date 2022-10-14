@@ -33,7 +33,6 @@
 import { omit } from 'lodash';
 import type { opensearchtypes } from '@opensearch-project/opensearch';
 import uuid from 'uuid';
-import * as sqlite3 from 'sqlite3';
 import { Database } from 'sqlite';
 import type { ISavedObjectTypeRegistry } from '../../saved_objects_type_registry';
 import { OpenSearchClient, DeleteDocumentResponse } from '../../../opensearch/';
@@ -951,24 +950,13 @@ export class SavedObjectsRepository {
       `SELECT * from kibana where id IN(${bulkGetDocs.map((doc) => `'${doc._id}'`).join(',')})`
     );
     // console.log('sqlResp', sqlResp);
-    const bulkGetResponse = bulkGetDocs.length
-      ? await this.client.mget(
-          {
-            body: {
-              docs: bulkGetDocs,
-            },
-          },
-          { ignore: [404] }
-        )
-      : undefined;
-    // console.log('expectedResult', JSON.stringify(bulkGetResponse, null, 4));
     return {
       saved_objects: expectedBulkGetResults.map((expectedResult) => {
         if (isLeft(expectedResult)) {
           return expectedResult.error as any;
         }
 
-        const { type, id, opensearchRequestIndex } = expectedResult.value;
+        const { type, id } = expectedResult.value;
         // TODO:: This is bad, FIELD fucnction should ensure order figure it out.
         const doc = sqlResp.find(
           (row: any) => row.id === this._serializer.generateRawId(namespace, type, id)
@@ -991,7 +979,6 @@ export class SavedObjectsRepository {
           } as any) as SavedObject<T>;
         }
 
-        // @ts-expect-error MultiGetHit._source is optional
         return getSavedObjectFromSource(this._registry, type, id, doc);
       }),
     };
@@ -1033,6 +1020,7 @@ export class SavedObjectsRepository {
     const docNotFound = body.found === false || sqlResp === undefined;
     const indexNotFound = statusCode === 404;
     if (
+      docNotFound ||
       !isFoundGetResponse(body) ||
       indexNotFound ||
       !this.rawDocExistsInNamespace(body, namespace)

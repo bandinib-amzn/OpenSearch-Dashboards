@@ -35,8 +35,6 @@
 
 import { OpenSearchDashboardsConfigType } from 'src/core/server/opensearch_dashboards_config';
 import { BehaviorSubject } from 'rxjs';
-
-import sqlite3 from 'sqlite3';
 import { Database } from 'sqlite';
 import { Logger } from '../../../logging';
 import { IndexMapping, SavedObjectsTypeMappingDefinitions } from '../../mappings';
