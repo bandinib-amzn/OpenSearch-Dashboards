@@ -69,6 +69,7 @@ import { RequestHandlerContext } from '.';
 import { InternalCoreSetup, InternalCoreStart, ServiceConfigDescriptor } from './internal_types';
 import { CoreUsageDataService } from './core_usage_data';
 import { CoreRouteHandlerContext } from './core_route_handler_context';
+import { DataSourceService } from './data_source/data_source_service';
 
 const coreId = Symbol('core');
 const rootConfigPath = '';
@@ -95,6 +96,7 @@ export class Server {
   private readonly coreUsageData: CoreUsageDataService;
   private readonly security: SecurityService;
   private readonly crossCompatibility: CrossCompatibilityService;
+  private readonly dataSourceService: DataSourceService;
 
   #pluginsInitialized?: boolean;
   private coreStart?: InternalCoreStart;
@@ -131,6 +133,7 @@ export class Server {
     this.coreUsageData = new CoreUsageDataService(core);
     this.security = new SecurityService(core);
     this.crossCompatibility = new CrossCompatibilityService(core);
+    this.dataSourceService = new DataSourceService(core);
   }
 
   public async setup() {
@@ -214,6 +217,8 @@ export class Server {
 
     this.coreUsageData.setup({ metrics: metricsSetup });
 
+    const dataSourceServiceSetup = this.dataSourceService.setup();
+
     const coreSetup: InternalCoreSetup = {
       capabilities: capabilitiesSetup,
       context: contextServiceSetup,
@@ -229,6 +234,7 @@ export class Server {
       logging: loggingSetup,
       metrics: metricsSetup,
       security: securitySetup,
+      dataSourceService: dataSourceServiceSetup,
     };
 
     const pluginsSetup = await this.plugins.setup(coreSetup);

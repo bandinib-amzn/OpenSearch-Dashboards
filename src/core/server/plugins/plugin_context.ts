@@ -221,6 +221,7 @@ export function createPluginSetupContext<TPlugin, TPluginDependencies>(
     getStartServices: () => plugin.startDependencies,
     auditTrail: deps.auditTrail,
     security: deps.security,
+    dataSourceService: deps.dataSourceService,
   };
 }
 

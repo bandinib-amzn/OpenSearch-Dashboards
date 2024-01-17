@@ -52,6 +52,7 @@ import { auditTrailServiceMock } from './audit_trail/audit_trail_service.mock';
 import { coreUsageDataServiceMock } from './core_usage_data/core_usage_data_service.mock';
 import { securityServiceMock } from './security/security_service.mock';
 import { crossCompatibilityServiceMock } from './cross_compatibility/cross_compatibility.mock';
+import { dataSourceServiceMock } from './data_source/data_source_service.mock';
 
 export { configServiceMock } from './config/mocks';
 export { httpServerMock } from './http/http_server.mocks';
@@ -161,6 +162,7 @@ function createCoreSetupMock({
       .fn<Promise<[ReturnType<typeof createCoreStartMock>, object, any]>, []>()
       .mockResolvedValue([createCoreStartMock(), pluginStartDeps, pluginStartContract]),
     security: securityServiceMock.createSetupContract(),
+    dataSourceService: dataSourceServiceMock.createSetupContract(),
   };
 
   return mock;
@@ -198,6 +200,7 @@ function createInternalCoreSetupMock() {
     logging: loggingServiceMock.createInternalSetupContract(),
     metrics: metricsServiceMock.createInternalSetupContract(),
     security: securityServiceMock.createSetupContract(),
+    dataSourceService: dataSourceServiceMock.createSetupContract(),
   };
   return setupDeps;
 }
