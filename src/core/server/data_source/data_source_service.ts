@@ -4,13 +4,20 @@
  */
 
 import { CoreService } from '../../types';
-import { InternalDataSourceServiceSetup, AuthenticationMethod } from './types';
+import {
+  InternalDataSourceServiceSetup,
+  AuthenticationMethod,
+  InternalDataSourceServiceStart,
+} from './types';
 import { Logger } from '../logging';
 import { CoreContext } from '../core_context';
+import { AuthenticationMethodRegistery } from './authentication_methods_registry';
 
-export class DataSourceService implements CoreService<InternalDataSourceServiceSetup> {
+export class DataSourceService
+  implements CoreService<InternalDataSourceServiceSetup, InternalDataSourceServiceStart> {
   private logger: Logger;
   private started = false;
+  private authMethodsRegistry = new AuthenticationMethodRegistery();
 
   constructor(coreContext: CoreContext) {
     this.logger = coreContext.logger.get('data-source-service');
@@ -23,16 +30,17 @@ export class DataSourceService implements CoreService<InternalDataSourceServiceS
         if (this.started) {
           throw new Error('cannot call `registerAuthenticationMethod` after service startup.');
         }
-        this.logger.info(
-          `authentication method received from plugin >>> name: ${authMethod.name} and description: ${authMethod.description}`
-        );
+        this.authMethodsRegistry.registerAuthenticationMethod(authMethod);
       },
     };
   }
 
-  public start() {
+  public async start(): Promise<InternalDataSourceServiceStart> {
     this.logger.debug('Starting data source service');
     this.started = true;
+    return {
+      getAuthenticationMethodRegistery: () => this.authMethodsRegistry,
+    };
   }
 
   public stop() {

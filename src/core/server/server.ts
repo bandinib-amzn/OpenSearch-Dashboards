@@ -282,6 +282,8 @@ export class Server {
       plugins: this.openSearchPluginDeps,
     });
 
+    const dataSourceServiceStart = await this.dataSourceService.start();
+
     this.coreStart = {
       capabilities: capabilitiesStart,
       opensearch: opensearchStart,
@@ -292,6 +294,7 @@ export class Server {
       auditTrail: auditTrailStart,
       coreUsageData: coreUsageDataStart,
       crossCompatibility: crossCompatibilityServiceStart,
+      dataSourceService: dataSourceServiceStart,
     };
 
     const pluginsStart = await this.plugins.start(this.coreStart);

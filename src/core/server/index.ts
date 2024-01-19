@@ -78,7 +78,11 @@ import { AppenderConfigType, appendersSchema, LoggingServiceSetup } from './logg
 import { CoreUsageDataStart } from './core_usage_data';
 import { SecurityServiceSetup } from './security/types';
 import { CrossCompatibilityServiceStart } from './cross_compatibility/types';
-import { DataSourceServiceSetup } from './data_source/types';
+import {
+  DataSourceServiceSetup,
+  DataSourceServiceStart,
+  AuthenticationMethod,
+} from './data_source/types';
 
 // Because of #79265 we need to explicity import, then export these types for
 // scripts/telemetry_check.js to work as expected
@@ -491,6 +495,7 @@ export interface CoreStart {
   coreUsageData: CoreUsageDataStart;
   /** {@link CrossCompatibilityServiceStart} */
   crossCompatibility: CrossCompatibilityServiceStart;
+  dataSourceService: DataSourceServiceStart;
 }
 
 export {
@@ -503,6 +508,7 @@ export {
   PluginOpaqueId,
   AuditTrailStart,
   CrossCompatibilityServiceStart,
+  AuthenticationMethod,
 };
 
 /**

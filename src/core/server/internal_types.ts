@@ -50,7 +50,10 @@ import { InternalLoggingServiceSetup } from './logging';
 import { CoreUsageDataStart } from './core_usage_data';
 import { InternalSecurityServiceSetup } from './security/types';
 import { CrossCompatibilityServiceStart } from './cross_compatibility';
-import { InternalDataSourceServiceSetup } from './data_source/types';
+import {
+  InternalDataSourceServiceSetup,
+  InternalDataSourceServiceStart,
+} from './data_source/types';
 
 /** @internal */
 export interface InternalCoreSetup {
@@ -84,6 +87,7 @@ export interface InternalCoreStart {
   auditTrail: AuditTrailStart;
   coreUsageData: CoreUsageDataStart;
   crossCompatibility: CrossCompatibilityServiceStart;
+  dataSourceService: InternalDataSourceServiceStart;
 }
 
 /**

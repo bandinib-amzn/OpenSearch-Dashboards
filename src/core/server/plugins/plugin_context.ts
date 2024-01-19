@@ -273,5 +273,6 @@ export function createPluginStartContext<TPlugin, TPluginDependencies>(
     auditTrail: deps.auditTrail,
     coreUsageData: deps.coreUsageData,
     crossCompatibility: deps.crossCompatibility,
+    dataSourceService: deps.dataSourceService,
   };
 }

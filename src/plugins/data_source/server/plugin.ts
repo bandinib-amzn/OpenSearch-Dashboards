@@ -17,6 +17,7 @@ import {
   Plugin,
   PluginInitializerContext,
   RequestHandler,
+  AuthenticationMethod,
 } from '../../../../src/core/server';
 import { DataSourcePluginConfigType } from '../config';
 import { LoggingAuditor } from './audit/logging_auditor';
@@ -115,8 +116,11 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
   }
 
   public start(core: CoreStart) {
-    this.logger.debug('dataSource: Started');
-
+    this.logger.info('dataSource: Started');
+    const authMethodsRegistry = core.dataSourceService.getAuthenticationMethodRegistery();
+    authMethodsRegistry.getAllAuthenticationMethods().forEach((auth: AuthenticationMethod) => {
+      this.logger.info(`AuthenticationMethod received = ${auth.authType}`);
+    });
     return {};
   }
 

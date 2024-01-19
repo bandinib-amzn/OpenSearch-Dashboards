@@ -179,6 +179,7 @@ function createCoreStartMock() {
     uiSettings: uiSettingsServiceMock.createStartContract(),
     coreUsageData: coreUsageDataServiceMock.createStartContract(),
     crossCompatibility: crossCompatibilityServiceMock.createStartContract(),
+    dataSourceService: dataSourceServiceMock.createStartContarct(),
   };
 
   return mock;
@@ -216,6 +217,7 @@ function createInternalCoreStartMock() {
     auditTrail: auditTrailServiceMock.createStartContract(),
     coreUsageData: coreUsageDataServiceMock.createStartContract(),
     crossCompatibility: crossCompatibilityServiceMock.createStartContract(),
+    dataSourceService: dataSourceServiceMock.createStartContarct(),
   };
   return startDeps;
 }

@@ -234,6 +234,7 @@ export class LegacyService implements CoreService {
         },
       },
       crossCompatibility: startDeps.core.crossCompatibility,
+      dataSourceService: startDeps.core.dataSourceService,
     };
 
     const router = setupDeps.core.http.createRouter('', this.legacyId);
