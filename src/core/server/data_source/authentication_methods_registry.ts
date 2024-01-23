@@ -27,4 +27,8 @@ export class AuthenticationMethodRegistery {
   public getAllAuthenticationMethods() {
     return [...this.authMethods.values()];
   }
+
+  public getAuthenticationMethod(authType: string): AuthenticationMethod {
+    return this.authMethods.get(authType) as AuthenticationMethod;
+  }
 }

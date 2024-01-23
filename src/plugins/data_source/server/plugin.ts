@@ -18,6 +18,7 @@ import {
   PluginInitializerContext,
   RequestHandler,
   AuthenticationMethod,
+  IAuthenticationMethodRegistery,
 } from '../../../../src/core/server';
 import { DataSourcePluginConfigType } from '../config';
 import { LoggingAuditor } from './audit/logging_auditor';
@@ -37,6 +38,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
   private readonly cryptographyService: CryptographyService;
   private readonly dataSourceService: DataSourceService;
   private readonly config$: Observable<DataSourcePluginConfigType>;
+  private registeredAuthRegistry: IAuthenticationMethodRegistery | undefined;
 
   constructor(private initializerContext: PluginInitializerContext<DataSourcePluginConfigType>) {
     this.logger = this.initializerContext.logger.get();
@@ -103,7 +105,8 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
         dataSourceService,
         cryptographyServiceSetup,
         this.logger,
-        auditTrailPromise
+        auditTrailPromise,
+        this.registeredAuthRegistry
       )
     );
 
@@ -117,10 +120,12 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
 
   public start(core: CoreStart) {
     this.logger.info('dataSource: Started');
-    const authMethodsRegistry = core.dataSourceService.getAuthenticationMethodRegistery();
-    authMethodsRegistry.getAllAuthenticationMethods().forEach((auth: AuthenticationMethod) => {
-      this.logger.info(`AuthenticationMethod received = ${auth.authType}`);
-    });
+    this.registeredAuthRegistry = core.dataSourceService.getAuthenticationMethodRegistery();
+    this.registeredAuthRegistry
+      .getAllAuthenticationMethods()
+      .forEach((auth: AuthenticationMethod) => {
+        this.logger.info(`AuthenticationMethod received = ${auth.authType}`);
+      });
     return {};
   }
 
@@ -132,7 +137,8 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     dataSourceService: DataSourceServiceSetup,
     cryptography: CryptographyServiceSetup,
     logger: Logger,
-    auditTrailPromise: Promise<AuditorFactory>
+    auditTrailPromise: Promise<AuditorFactory>,
+    registeredAuthRegistry: IAuthenticationMethodRegistery | undefined
   ): IContextProvider<RequestHandler<unknown, unknown, unknown>, 'dataSource'> => {
     return (context, req) => {
       return {
@@ -142,11 +148,15 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
 
             this.logAuditMessage(auditor, dataSourceId, req);
 
-            return dataSourceService.getDataSourceClient({
-              dataSourceId,
-              savedObjects: context.core.savedObjects.client,
-              cryptography,
-            });
+            return dataSourceService.getDataSourceClient(
+              {
+                dataSourceId,
+                savedObjects: context.core.savedObjects.client,
+                cryptography,
+                request: req,
+              },
+              registeredAuthRegistry
+            );
           },
           legacy: {
             getClient: (dataSourceId: string) => {
@@ -154,6 +164,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
                 dataSourceId,
                 savedObjects: context.core.savedObjects.client,
                 cryptography,
+                request: req,
               });
             },
           },

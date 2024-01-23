@@ -82,7 +82,8 @@ import {
   DataSourceServiceSetup,
   DataSourceServiceStart,
   AuthenticationMethod,
-} from './data_source/types';
+  IAuthenticationMethodRegistery,
+} from './data_source';
 
 // Because of #79265 we need to explicity import, then export these types for
 // scripts/telemetry_check.js to work as expected
@@ -509,6 +510,7 @@ export {
   AuditTrailStart,
   CrossCompatibilityServiceStart,
   AuthenticationMethod,
+  IAuthenticationMethodRegistery,
 };
 
 /**

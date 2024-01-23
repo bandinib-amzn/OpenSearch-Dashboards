@@ -7,7 +7,12 @@ import { Client, ClientOptions } from '@opensearch-project/opensearch';
 import { Client as LegacyClient } from 'elasticsearch';
 import { Credentials } from 'aws-sdk';
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
-import { Logger } from '../../../../../src/core/server';
+import {
+  Logger,
+  IAuthenticationMethodRegistery,
+  OpenSearchDashboardsRequest,
+  AuthAttributes,
+} from '../../../../../src/core/server';
 import {
   AuthType,
   DataSourceAttributes,
@@ -29,10 +34,17 @@ import {
 } from './configure_client_utils';
 
 export const configureClient = async (
-  { dataSourceId, savedObjects, cryptography, testClientDataSourceAttr }: DataSourceClientParams,
+  {
+    dataSourceId,
+    savedObjects,
+    cryptography,
+    testClientDataSourceAttr,
+    request,
+  }: DataSourceClientParams,
   openSearchClientPoolSetup: OpenSearchClientPoolSetup,
   config: DataSourcePluginConfigType,
-  logger: Logger
+  logger: Logger,
+  registeredAuthRegistry: IAuthenticationMethodRegistery | undefined
 ): Promise<Client> => {
   let dataSource;
   let requireDecryption = true;
@@ -68,9 +80,11 @@ export const configureClient = async (
       dataSource,
       openSearchClientPoolSetup.addClientToPool,
       config,
+      request,
       cryptography,
       rootClient,
       dataSourceId,
+      registeredAuthRegistry,
       requireDecryption
     );
   } catch (error: any) {
@@ -98,9 +112,11 @@ const getQueryClient = async (
   dataSourceAttr: DataSourceAttributes,
   addClientToPool: (endpoint: string, authType: AuthType, client: Client | LegacyClient) => void,
   config: DataSourcePluginConfigType,
+  request: OpenSearchDashboardsRequest,
   cryptography?: CryptographyServiceSetup,
   rootClient?: Client,
   dataSourceId?: string,
+  registeredAuthRegistry?: IAuthenticationMethodRegistery | undefined,
   requireDecryption: boolean = true
 ): Promise<Client> => {
   const {
@@ -109,6 +125,15 @@ const getQueryClient = async (
   } = dataSourceAttr;
   const clientOptions = parseClientOptions(config, endpoint);
   const cacheKey = generateCacheKey(dataSourceAttr, dataSourceId);
+
+  if (!dataSourceAttr.auth.credentials) {
+    throw Error(`Credentials not found.`);
+  }
+  if (registeredAuthRegistry !== undefined) {
+    return registeredAuthRegistry
+      .getAuthenticationMethod(type)
+      .getClient(dataSourceAttr.auth.credentials as AuthAttributes, request, clientOptions);
+  }
 
   switch (type) {
     case AuthType.NoAuth:
