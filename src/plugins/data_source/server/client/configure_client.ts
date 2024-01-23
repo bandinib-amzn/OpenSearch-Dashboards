@@ -44,7 +44,7 @@ export const configureClient = async (
   openSearchClientPoolSetup: OpenSearchClientPoolSetup,
   config: DataSourcePluginConfigType,
   logger: Logger,
-  registeredAuthRegistry: IAuthenticationMethodRegistery | undefined
+  registeredAuthRegistry?: IAuthenticationMethodRegistery | undefined
 ): Promise<Client> => {
   let dataSource;
   let requireDecryption = true;
@@ -126,7 +126,7 @@ const getQueryClient = async (
   const clientOptions = parseClientOptions(config, endpoint);
   const cacheKey = generateCacheKey(dataSourceAttr, dataSourceId);
 
-  if (!dataSourceAttr.auth.credentials) {
+  if (type !== AuthType.NoAuth && !dataSourceAttr.auth.credentials) {
     throw Error(`Credentials not found.`);
   }
   if (registeredAuthRegistry !== undefined) {

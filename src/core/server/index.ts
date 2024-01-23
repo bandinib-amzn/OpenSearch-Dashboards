@@ -83,6 +83,7 @@ import {
   DataSourceServiceStart,
   AuthenticationMethod,
   IAuthenticationMethodRegistery,
+  AuthAttributes,
 } from './data_source';
 
 // Because of #79265 we need to explicity import, then export these types for
@@ -511,6 +512,7 @@ export {
   CrossCompatibilityServiceStart,
   AuthenticationMethod,
   IAuthenticationMethodRegistery,
+  AuthAttributes,
 };
 
 /**

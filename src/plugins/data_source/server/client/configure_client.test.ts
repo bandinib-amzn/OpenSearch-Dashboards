@@ -3,8 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SavedObjectsClientContract } from '../../../../core/server';
-import { loggingSystemMock, savedObjectsClientMock } from '../../../../core/server/mocks';
+import {
+  SavedObjectsClientContract,
+  IAuthenticationMethodRegistery,
+  AuthenticationMethod,
+} from '../../../../core/server';
+import {
+  loggingSystemMock,
+  savedObjectsClientMock,
+  authenticationMethodRegisteryMock,
+} from '../../../../core/server/mocks';
 import { DATA_SOURCE_SAVED_OBJECT_TYPE } from '../../common';
 import {
   DataSourceAttributes,
@@ -38,12 +46,14 @@ describe('configureClient', () => {
   let dataSourceClientParams: DataSourceClientParams;
   let usernamePasswordAuthContent: UsernamePasswordTypedContent;
   let sigV4AuthContent: SigV4Content;
+  let authenticationMethodRegistery: jest.Mocked<IAuthenticationMethodRegistery>;
 
   beforeEach(() => {
     dsClient = opensearchClientMock.createInternalClient();
     logger = loggingSystemMock.createLogger();
     savedObjectsMock = savedObjectsClientMock.create();
     cryptographyMock = cryptographyServiceSetupMock.create();
+    authenticationMethodRegistery = authenticationMethodRegisteryMock.create();
 
     config = {
       enabled: true,
@@ -237,5 +247,55 @@ describe('configureClient', () => {
     expect(ClientMock).not.toHaveBeenCalled();
     expect(savedObjectsMock.get).toHaveBeenCalledTimes(1);
     expect(decodeAndDecryptSpy).toHaveBeenCalledTimes(1);
+  });
+
+  test('should throw error when no credentials present for auth method other than NO_AUTH', async () => {
+    savedObjectsMock.get.mockReset().mockResolvedValueOnce({
+      id: DATA_SOURCE_ID,
+      type: DATA_SOURCE_SAVED_OBJECT_TYPE,
+      attributes: {
+        ...dataSourceAttr,
+        auth: {
+          type: 'token_exchange',
+        },
+      },
+      references: [],
+    });
+    await expect(
+      configureClient(dataSourceClientParams, clientPoolSetup, config, logger)
+    ).rejects.toThrowError();
+  });
+
+  test('configureClient should retunrn client from authentication registery if method present in registry', async () => {
+    const tokenExchangeContent = {
+      region: 'us-east-1',
+      roleARN: 'test-role',
+    };
+    savedObjectsMock.get.mockReset().mockResolvedValueOnce({
+      id: DATA_SOURCE_ID,
+      type: DATA_SOURCE_SAVED_OBJECT_TYPE,
+      attributes: {
+        ...dataSourceAttr,
+        auth: {
+          type: 'token_exchange',
+          credentials: tokenExchangeContent,
+        },
+      },
+      references: [],
+    });
+    const authMethod: AuthenticationMethod = { authType: 'token_exchange', getClient: ClientMock };
+    authenticationMethodRegistery.getAuthenticationMethod.mockImplementation(() => authMethod);
+
+    const client = await configureClient(
+      dataSourceClientParams,
+      clientPoolSetup,
+      config,
+      logger,
+      authenticationMethodRegistery
+    );
+    expect(authenticationMethodRegistery.getAuthenticationMethod).toHaveBeenCalledTimes(1);
+    expect(ClientMock).toHaveBeenCalledTimes(1);
+    expect(savedObjectsMock.get).toHaveBeenCalledTimes(1);
+    // expect(client).toBe(dsClient.child.mock.results[0].value);
   });
 });

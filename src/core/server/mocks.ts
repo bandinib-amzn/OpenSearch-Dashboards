@@ -73,6 +73,7 @@ export { contextServiceMock } from './context/context_service.mock';
 export { capabilitiesServiceMock } from './capabilities/capabilities_service.mock';
 export { coreUsageDataServiceMock } from './core_usage_data/core_usage_data_service.mock';
 export { crossCompatibilityServiceMock } from './cross_compatibility/cross_compatibility.mock';
+export { authenticationMethodRegisteryMock } from './data_source/authentication_methods_registry.mock';
 
 export function pluginInitializerContextConfigMock<T>(config: T) {
   const globalConfig: SharedGlobalConfig = {
