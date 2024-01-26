@@ -7,7 +7,7 @@ import { Client, ClientOptions } from '@opensearch-project/opensearch';
 import { Client as LegacyClient } from 'elasticsearch';
 import { Credentials } from 'aws-sdk';
 import { AwsSigv4Signer } from '@opensearch-project/opensearch/aws';
-import { Logger } from '../../../../../src/core/server';
+import { Logger, OpenSearchDashboardsRequest } from '../../../../../src/core/server';
 import {
   AuthType,
   DataSourceAttributes,
@@ -29,7 +29,13 @@ import {
 } from './configure_client_utils';
 
 export const configureClient = async (
-  { dataSourceId, savedObjects, cryptography, testClientDataSourceAttr }: DataSourceClientParams,
+  {
+    dataSourceId,
+    savedObjects,
+    cryptography,
+    testClientDataSourceAttr,
+    request,
+  }: DataSourceClientParams,
   openSearchClientPoolSetup: OpenSearchClientPoolSetup,
   config: DataSourcePluginConfigType,
   logger: Logger
@@ -68,6 +74,7 @@ export const configureClient = async (
       dataSource,
       openSearchClientPoolSetup.addClientToPool,
       config,
+      request,
       cryptography,
       rootClient,
       dataSourceId,
@@ -98,6 +105,7 @@ const getQueryClient = async (
   dataSourceAttr: DataSourceAttributes,
   addClientToPool: (endpoint: string, authType: AuthType, client: Client | LegacyClient) => void,
   config: DataSourcePluginConfigType,
+  request: OpenSearchDashboardsRequest,
   cryptography?: CryptographyServiceSetup,
   rootClient?: Client,
   dataSourceId?: string,

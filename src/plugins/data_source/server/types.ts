@@ -7,6 +7,7 @@ import {
   LegacyCallAPIOptions,
   OpenSearchClient,
   SavedObjectsClientContract,
+  OpenSearchDashboardsRequest,
 } from 'src/core/server';
 import { DataSourceAttributes } from '../common/data_sources';
 
@@ -27,7 +28,18 @@ export interface DataSourceClientParams {
   dataSourceId?: string;
   // required when creating test client
   testClientDataSourceAttr?: DataSourceAttributes;
+  request: OpenSearchDashboardsRequest;
 }
+
+export interface DataSourceCredentialsProviderOptions {
+  dataSourceAttr: DataSourceAttributes;
+  request: OpenSearchDashboardsRequest;
+  cryptography?: CryptographyServiceSetup;
+}
+
+export type DataSourceCredentialsProvider = (
+  options: DataSourceCredentialsProviderOptions
+) => UsernamePasswordTypedContent | SigV4Content;
 
 export interface DataSourcePluginRequestContext {
   opensearch: {
@@ -53,6 +65,11 @@ declare module 'src/core/server' {
 
 export interface DataSourcePluginSetup {
   createDataSourceError: (err: any) => DataSourceError;
+
+  registerCredentialProvider: (
+    authType: string,
+    credentialProvider: DataSourceCredentialsProvider
+  ) => void;
 }
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DataSourcePluginStart {}

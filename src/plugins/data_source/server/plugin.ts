@@ -23,7 +23,11 @@ import { LoggingAuditor } from './audit/logging_auditor';
 import { CryptographyService, CryptographyServiceSetup } from './cryptography_service';
 import { DataSourceService, DataSourceServiceSetup } from './data_source_service';
 import { DataSourceSavedObjectsClientWrapper, dataSource } from './saved_objects';
-import { DataSourcePluginSetup, DataSourcePluginStart } from './types';
+import {
+  DataSourcePluginSetup,
+  DataSourcePluginStart,
+  DataSourceCredentialsProvider,
+} from './types';
 import { DATA_SOURCE_SAVED_OBJECT_TYPE } from '../common';
 
 // eslint-disable-next-line @osd/eslint/no-restricted-paths
@@ -109,8 +113,20 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     const router = core.http.createRouter();
     registerTestConnectionRoute(router, dataSourceService, cryptographyServiceSetup);
 
+    const registerCredentialProvider = (
+      authType: string,
+      credentialProvider: DataSourceCredentialsProvider
+    ) => {
+      this.logger.info(`Registered Credential Provider for authType = ${authType}`);
+      /*
+      Add in auth registry
+      this.authRegistery.registerAuth(authType, credentialProvider);
+      */
+    };
+
     return {
       createDataSourceError: (e: any) => createDataSourceError(e),
+      registerCredentialProvider,
     };
   }
 
@@ -142,6 +158,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
               dataSourceId,
               savedObjects: context.core.savedObjects.client,
               cryptography,
+              request: req,
             });
           },
           legacy: {
@@ -150,6 +167,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
                 dataSourceId,
                 savedObjects: context.core.savedObjects.client,
                 cryptography,
+                request: req,
               });
             },
           },

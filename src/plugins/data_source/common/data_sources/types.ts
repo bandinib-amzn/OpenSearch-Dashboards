@@ -2,7 +2,6 @@
  * Copyright OpenSearch Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-
 import { SavedObjectAttributes } from 'src/core/types';
 
 export interface DataSourceAttributes extends SavedObjectAttributes {
@@ -11,7 +10,7 @@ export interface DataSourceAttributes extends SavedObjectAttributes {
   endpoint: string;
   auth: {
     type: AuthType;
-    credentials: UsernamePasswordTypedContent | SigV4Content | undefined;
+    credentials: UsernamePasswordTypedContent | SigV4Content | undefined | SavedObjectAttributes;
   };
   lastUpdatedTime?: string;
 }
@@ -26,6 +25,7 @@ export interface SigV4Content extends SavedObjectAttributes {
   secretKey: string;
   region: string;
   service?: SigV4ServiceName;
+  sessionToken?: string;
 }
 
 export interface UsernamePasswordTypedContent extends SavedObjectAttributes {
