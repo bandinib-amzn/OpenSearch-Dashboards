@@ -34,12 +34,18 @@ import { DATA_SOURCE_SAVED_OBJECT_TYPE } from '../common';
 import { ensureRawRequest } from '../../../../src/core/server/http/router';
 import { createDataSourceError } from './lib/error';
 import { registerTestConnectionRoute } from './routes/test_connection';
+import {
+  AuthenticationMethodRegistery,
+  IAuthenticationMethodRegistery,
+} from '../common/auth_registry';
 
 export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourcePluginStart> {
   private readonly logger: Logger;
   private readonly cryptographyService: CryptographyService;
   private readonly dataSourceService: DataSourceService;
   private readonly config$: Observable<DataSourcePluginConfigType>;
+  private started = false;
+  private authMethodsRegistry = new AuthenticationMethodRegistery();
 
   constructor(private initializerContext: PluginInitializerContext<DataSourcePluginConfigType>) {
     this.logger = this.initializerContext.logger.get();
@@ -48,7 +54,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     this.config$ = this.initializerContext.config.create<DataSourcePluginConfigType>();
   }
 
-  public async setup(core: CoreSetup) {
+  public async setup(core: CoreSetup<DataSourcePluginStart>) {
     this.logger.debug('dataSource: Setup');
 
     // Register data source saved object type
@@ -99,6 +105,12 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     const auditTrailPromise = core.getStartServices().then(([coreStart]) => coreStart.auditTrail);
 
     const dataSourceService: DataSourceServiceSetup = await this.dataSourceService.setup(config);
+
+    const authRegistryPromise = core.getStartServices().then(([, , selfStart]) => {
+      const dataSourcePluginStart = selfStart as DataSourcePluginStart;
+      return dataSourcePluginStart.getAuthenticationMethodRegistery();
+    });
+
     // Register data source plugin context to route handler context
     core.http.registerRouteHandlerContext(
       'dataSource',
@@ -106,7 +118,8 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
         dataSourceService,
         cryptographyServiceSetup,
         this.logger,
-        auditTrailPromise
+        auditTrailPromise,
+        authRegistryPromise
       )
     );
 
@@ -118,10 +131,10 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
       credentialProvider: DataSourceCredentialsProvider
     ) => {
       this.logger.info(`Registered Credential Provider for authType = ${authType}`);
-      /*
-      Add in auth registry
-      this.authRegistery.registerAuth(authType, credentialProvider);
-      */
+      if (this.started) {
+        throw new Error('cannot call `registerCredentialProvider` after service startup.');
+      }
+      this.authMethodsRegistry.registerAuthenticationMethod(authType, credentialProvider);
     };
 
     return {
@@ -132,8 +145,10 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
 
   public start(core: CoreStart) {
     this.logger.debug('dataSource: Started');
-
-    return {};
+    this.started = true;
+    return {
+      getAuthenticationMethodRegistery: () => this.authMethodsRegistry,
+    };
   }
 
   public stop() {
@@ -144,9 +159,16 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     dataSourceService: DataSourceServiceSetup,
     cryptography: CryptographyServiceSetup,
     logger: Logger,
-    auditTrailPromise: Promise<AuditorFactory>
+    auditTrailPromise: Promise<AuditorFactory>,
+    authRegistry: Promise<IAuthenticationMethodRegistery>
   ): IContextProvider<RequestHandler<unknown, unknown, unknown>, 'dataSource'> => {
     return (context, req) => {
+      authRegistry.then((auth) => {
+        if (auth !== undefined)
+          logger.info(
+            `Total item found in auth registry is ${auth.getAllAuthenticationMethods().length}`
+          );
+      });
       return {
         opensearch: {
           getClient: (dataSourceId: string) => {

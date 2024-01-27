@@ -9,10 +9,15 @@ import {
   SavedObjectsClientContract,
   OpenSearchDashboardsRequest,
 } from 'src/core/server';
-import { DataSourceAttributes } from '../common/data_sources';
+import {
+  DataSourceAttributes,
+  SigV4Content,
+  UsernamePasswordTypedContent,
+} from '../common/data_sources';
 
 import { CryptographyServiceSetup } from './cryptography_service';
 import { DataSourceError } from './lib/error';
+import { IAuthenticationMethodRegistery } from '../common/auth_registry';
 
 export interface LegacyClientCallAPIParams {
   endpoint: string;
@@ -28,7 +33,7 @@ export interface DataSourceClientParams {
   dataSourceId?: string;
   // required when creating test client
   testClientDataSourceAttr?: DataSourceAttributes;
-  request: OpenSearchDashboardsRequest;
+  request?: OpenSearchDashboardsRequest;
 }
 
 export interface DataSourceCredentialsProviderOptions {
@@ -71,5 +76,7 @@ export interface DataSourcePluginSetup {
     credentialProvider: DataSourceCredentialsProvider
   ) => void;
 }
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface DataSourcePluginStart {}
+
+export interface DataSourcePluginStart {
+  getAuthenticationMethodRegistery: () => IAuthenticationMethodRegistery;
+}
