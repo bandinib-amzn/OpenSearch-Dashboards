@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// eslint-disable-next-line @osd/eslint/no-restricted-paths
-import { DataSourceCredentialsProvider } from '../../server/types';
+import { AuthMethodValues } from '../../server/types';
 
 export type IAuthenticationMethodRegistery = Omit<
   AuthenticationMethodRegistery,
@@ -12,20 +11,16 @@ export type IAuthenticationMethodRegistery = Omit<
 >;
 
 export class AuthenticationMethodRegistery {
-  private readonly authMethods = new Map<string, DataSourceCredentialsProvider>();
-
+  private readonly authMethods = new Map<string, AuthMethodValues>();
   /**
    * Register a authMethods with function to return credentials inside the registry.
    * Authentication Method can only be registered once. subsequent calls with the same method name will throw an error.
    */
-  public registerAuthenticationMethod(
-    type: string,
-    credentialProvider: DataSourceCredentialsProvider
-  ) {
+  public registerAuthenticationMethod(type: string, authMethodValues: AuthMethodValues) {
     if (this.authMethods.has(type)) {
       throw new Error(`Authentication method '${type}' is already registered`);
     }
-    this.authMethods.set(type, credentialProvider);
+    this.authMethods.set(type, authMethodValues);
   }
 
   public getAllAuthenticationMethods() {

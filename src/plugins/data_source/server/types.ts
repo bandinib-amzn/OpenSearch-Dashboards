@@ -10,6 +10,7 @@ import {
   OpenSearchDashboardsRequest,
 } from 'src/core/server';
 import {
+  AuthType,
   DataSourceAttributes,
   SigV4Content,
   UsernamePasswordTypedContent,
@@ -34,17 +35,25 @@ export interface DataSourceClientParams {
   // required when creating test client
   testClientDataSourceAttr?: DataSourceAttributes;
   request?: OpenSearchDashboardsRequest;
+  authRegistryPromise?: Promise<IAuthenticationMethodRegistery>;
 }
 
 export interface DataSourceCredentialsProviderOptions {
   dataSourceAttr: DataSourceAttributes;
-  request: OpenSearchDashboardsRequest;
+  request?: OpenSearchDashboardsRequest;
   cryptography?: CryptographyServiceSetup;
 }
 
 export type DataSourceCredentialsProvider = (
   options: DataSourceCredentialsProviderOptions
-) => UsernamePasswordTypedContent | SigV4Content;
+) => Promise<UsernamePasswordTypedContent | SigV4Content>;
+
+export interface AuthMethodValues {
+  credentialProvider: DataSourceCredentialsProvider;
+  authType: AuthType;
+  authFieldsUI?: React.JSX.Element;
+  authComboUIElement?: React.JSX.Element;
+}
 
 export interface DataSourcePluginRequestContext {
   opensearch: {
@@ -71,10 +80,7 @@ declare module 'src/core/server' {
 export interface DataSourcePluginSetup {
   createDataSourceError: (err: any) => DataSourceError;
 
-  registerCredentialProvider: (
-    authType: string,
-    credentialProvider: DataSourceCredentialsProvider
-  ) => void;
+  registerCredentialProvider: (type: string, authMethodValues: AuthMethodValues) => void;
 }
 
 export interface DataSourcePluginStart {

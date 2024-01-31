@@ -23,14 +23,9 @@ import { LoggingAuditor } from './audit/logging_auditor';
 import { CryptographyService, CryptographyServiceSetup } from './cryptography_service';
 import { DataSourceService, DataSourceServiceSetup } from './data_source_service';
 import { DataSourceSavedObjectsClientWrapper, dataSource } from './saved_objects';
-import {
-  DataSourcePluginSetup,
-  DataSourcePluginStart,
-  DataSourceCredentialsProvider,
-} from './types';
+import { DataSourcePluginSetup, DataSourcePluginStart, AuthMethodValues } from './types';
 import { DATA_SOURCE_SAVED_OBJECT_TYPE } from '../common';
 
-// eslint-disable-next-line @osd/eslint/no-restricted-paths
 import { ensureRawRequest } from '../../../../src/core/server/http/router';
 import { createDataSourceError } from './lib/error';
 import { registerTestConnectionRoute } from './routes/test_connection';
@@ -126,15 +121,16 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     const router = core.http.createRouter();
     registerTestConnectionRoute(router, dataSourceService, cryptographyServiceSetup);
 
-    const registerCredentialProvider = (
-      authType: string,
-      credentialProvider: DataSourceCredentialsProvider
-    ) => {
-      this.logger.info(`Registered Credential Provider for authType = ${authType}`);
+    const registerCredentialProvider = (type: string, authMethodValues: AuthMethodValues) => {
+      this.logger.info(
+        `Registered Credential Provider for authType = ${type} and authMethodValues = ${JSON.stringify(
+          authMethodValues
+        )}`
+      );
       if (this.started) {
         throw new Error('cannot call `registerCredentialProvider` after service startup.');
       }
-      this.authMethodsRegistry.registerAuthenticationMethod(authType, credentialProvider);
+      this.authMethodsRegistry.registerAuthenticationMethod(type, authMethodValues);
     };
 
     return {
@@ -160,10 +156,10 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     cryptography: CryptographyServiceSetup,
     logger: Logger,
     auditTrailPromise: Promise<AuditorFactory>,
-    authRegistry: Promise<IAuthenticationMethodRegistery>
+    authRegistryPromise: Promise<IAuthenticationMethodRegistery>
   ): IContextProvider<RequestHandler<unknown, unknown, unknown>, 'dataSource'> => {
     return (context, req) => {
-      authRegistry.then((auth) => {
+      authRegistryPromise.then((auth) => {
         if (auth !== undefined)
           logger.info(
             `Total item found in auth registry is ${auth.getAllAuthenticationMethods().length}`
@@ -181,6 +177,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
               savedObjects: context.core.savedObjects.client,
               cryptography,
               request: req,
+              authRegistryPromise,
             });
           },
           legacy: {
@@ -190,6 +187,7 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
                 savedObjects: context.core.savedObjects.client,
                 cryptography,
                 request: req,
+                authRegistryPromise,
               });
             },
           },
