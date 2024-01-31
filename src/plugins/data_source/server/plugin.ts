@@ -121,16 +121,16 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     const router = core.http.createRouter();
     registerTestConnectionRoute(router, dataSourceService, cryptographyServiceSetup);
 
-    const registerCredentialProvider = (type: string, authMethodValues: AuthMethodValues) => {
+    const registerCredentialProvider = (name: string, authMethodValues: AuthMethodValues) => {
       this.logger.info(
-        `Registered Credential Provider for authType = ${type} and authMethodValues = ${JSON.stringify(
+        `Registered Credential Provider for authType = ${name} and authMethodValues = ${JSON.stringify(
           authMethodValues
         )}`
       );
       if (this.started) {
         throw new Error('cannot call `registerCredentialProvider` after service startup.');
       }
-      this.authMethodsRegistry.registerAuthenticationMethod(type, authMethodValues);
+      this.authMethodsRegistry.registerAuthenticationMethod(name, authMethodValues);
     };
 
     return {

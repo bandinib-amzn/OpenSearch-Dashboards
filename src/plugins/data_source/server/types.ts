@@ -80,7 +80,7 @@ declare module 'src/core/server' {
 export interface DataSourcePluginSetup {
   createDataSourceError: (err: any) => DataSourceError;
 
-  registerCredentialProvider: (type: string, authMethodValues: AuthMethodValues) => void;
+  registerCredentialProvider: (name: string, authMethodValues: AuthMethodValues) => void;
 }
 
 export interface DataSourcePluginStart {

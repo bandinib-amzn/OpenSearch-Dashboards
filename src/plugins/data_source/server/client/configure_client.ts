@@ -118,10 +118,10 @@ const getQueryClient = async (
   console.log(`I'm inside getQueryClient`);
   let {
     auth: { type },
-    authMethodType = 'token_exchange',
+    name,
   } = dataSourceAttr;
   const { endpoint } = dataSourceAttr;
-  authMethodType = authMethodType ?? type;
+  name = name ?? type;
   const clientOptions = parseClientOptions(config, endpoint);
   const cacheKey = generateCacheKey(dataSourceAttr, dataSourceId);
   let awsCredential;
@@ -129,10 +129,8 @@ const getQueryClient = async (
     console.log(`authRegistryPromise is defined`);
     await authRegistryPromise.then((auth) => {
       if (auth !== undefined) {
-        console.log(
-          `auth is defined, calling getAuthenticationMethod with param = ${authMethodType}`
-        );
-        const authMethod = auth.getAuthenticationMethod(authMethodType);
+        console.log(`auth is defined, calling getAuthenticationMethod with param = ${name}`);
+        const authMethod = auth.getAuthenticationMethod(name);
         console.log(`authMethod = ${JSON.stringify(authMethod)}`);
         awsCredential = authMethod?.credentialProvider({ dataSourceAttr, request, cryptography });
         type = authMethod?.authType;
