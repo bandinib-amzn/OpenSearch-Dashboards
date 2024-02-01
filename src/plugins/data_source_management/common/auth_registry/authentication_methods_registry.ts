@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { EuiSuperSelectOption } from '@elastic/eui';
+
 export interface AuthMethodUIElements {
   credentialForm: React.JSX.Element;
-  credentialSourceOption: any;
+  credentialSourceOption: EuiSuperSelectOption<string>;
 }
 
 export type IAuthenticationMethodRegistery = Omit<

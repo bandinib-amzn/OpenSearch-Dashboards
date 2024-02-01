@@ -73,7 +73,6 @@ export class DataSourceManagementPlugin
       name: string,
       authMethodUIElements: AuthMethodUIElements
     ) => {
-      console.log(`Registered Credential Provider for authType = ${name}`);
       if (this.started) {
         throw new Error(
           'cannot call `registerAuthenticationMethod` after data source management startup.'

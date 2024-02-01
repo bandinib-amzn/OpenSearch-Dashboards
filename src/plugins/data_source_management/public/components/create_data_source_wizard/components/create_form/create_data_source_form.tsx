@@ -18,6 +18,7 @@ import {
   EuiSuperSelect,
   EuiSpacer,
   EuiText,
+  EuiSuperSelectOption,
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
@@ -144,10 +145,21 @@ export class CreateDataSourceForm extends React.Component<
   getAuthUIFromRegistry = (authType: string) => {
     if (this.props.authRegistry !== undefined) {
       const authMethodUI = this.props.authRegistry.getAuthenticationMethod(authType);
-      console.log(`authMethod = ${JSON.stringify(authMethodUI)}`);
       return authMethodUI;
     }
     return null;
+  };
+
+  getAllAuthMethods = () => {
+    let options: Array<EuiSuperSelectOption<string>>;
+    options = [];
+    if (this.props.authRegistry !== undefined) {
+      const allAuthMethods = this.props.authRegistry.getAllAuthenticationMethods();
+      allAuthMethods.forEach((authMthods) => {
+        options.push(authMthods.credentialSourceOption);
+      });
+    }
+    return options;
   };
 
   onChangeSigV4ServiceName = (service: SigV4ServiceName) => {
@@ -609,7 +621,7 @@ export class CreateDataSourceForm extends React.Component<
             <EuiSpacer size="l" />
             <EuiFormRow>
               <EuiSuperSelect
-                options={credentialSourceOptions}
+                options={[...credentialSourceOptions, ...this.getAllAuthMethods()]}
                 valueOfSelected={this.state.auth.type}
                 onChange={(value) => this.onChangeAuthType(value)}
                 name="Credential"
