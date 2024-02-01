@@ -630,10 +630,7 @@ export class CreateDataSourceForm extends React.Component<
             </EuiFormRow>
 
             {/* Create New credentials */}
-            {/* ToDo: Fetch credentials form from registry. getCredentialsForm will return null
-             if that auth method is not present in registry. */}
-            {/* {this.getAuthUIFromRegistry(this.state.auth.type)} */}
-            {this.getAuthUIFromRegistry('token_exchange')?.credentialForm}
+            {this.getAuthUIFromRegistry(this.state.auth.type)?.credentialForm}
 
             {this.state.auth.type === AuthType.UsernamePasswordType
               ? this.renderCreateNewCredentialsForm(this.state.auth.type)
