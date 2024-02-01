@@ -18,6 +18,7 @@ import { getCreateBreadcrumbs } from '../breadcrumbs';
 import { CreateDataSourceForm } from './components/create_form';
 import { createSingleDataSource, getDataSources, testConnection } from '../utils';
 import { LoadingMask } from '../loading_mask';
+import { IAuthenticationMethodRegistery } from '../../../common/auth_registry';
 
 type CreateDataSourceWizardProps = RouteComponentProps;
 
@@ -30,17 +31,43 @@ export const CreateDataSourceWizard: React.FunctionComponent<CreateDataSourceWiz
     setBreadcrumbs,
     http,
     notifications: { toasts },
+    authRegistryPromise,
   } = useOpenSearchDashboards<DataSourceManagementContext>().services;
 
   /* State Variables */
   const [existingDatasourceNamesList, setExistingDatasourceNamesList] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [authRegistry, setAuthRegistry] = useState<IAuthenticationMethodRegistery>(undefined);
 
   /* Set breadcrumb */
   useEffectOnce(() => {
     setBreadcrumbs(getCreateBreadcrumbs());
     getExistingDataSourceNames();
+    getAuthRegistry();
   });
+
+  /* fetch Auth registry */
+  const getAuthRegistry = async () => {
+    setIsLoading(true);
+    try {
+      authRegistryPromise?.then((auth) => {
+        if (auth !== undefined) {
+          // console.log(
+          //   `Total item found in auth registry is ${auth.getAllAuthenticationMethods().length}`
+          // );
+          setAuthRegistry(auth);
+        }
+      });
+    } catch (e) {
+      handleDisplayToastMessage({
+        id: 'dataSourcesManagement.createDataSource.authRegistry',
+        defaultMessage: 'Unable to fetch Auth registry',
+      });
+      props.history.push('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   /* fetch datasources */
   const getExistingDataSourceNames = async () => {
@@ -118,6 +145,7 @@ export const CreateDataSourceWizard: React.FunctionComponent<CreateDataSourceWiz
           handleTestConnection={handleTestConnection}
           handleCancel={() => props.history.push('')}
           existingDatasourceNamesList={existingDatasourceNamesList}
+          authRegistry={authRegistry}
         />
         {isLoading ? <LoadingMask /> : null}
       </>

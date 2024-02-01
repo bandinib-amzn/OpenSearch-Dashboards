@@ -39,12 +39,14 @@ import {
   performDataSourceFormValidation,
 } from '../../../validation';
 import { isValidUrl } from '../../../utils';
+import { IAuthenticationMethodRegistery } from '../../../../../common/auth_registry';
 
 export interface CreateDataSourceProps {
   existingDatasourceNamesList: string[];
   handleSubmit: (formValues: DataSourceAttributes) => void;
   handleTestConnection: (formValues: DataSourceAttributes) => void;
   handleCancel: () => void;
+  authRegistry: IAuthenticationMethodRegistery;
 }
 export interface CreateDataSourceState {
   /* Validation */
@@ -137,6 +139,15 @@ export class CreateDataSourceForm extends React.Component<
         },
       },
     });
+  };
+
+  getAuthUIFromRegistry = (authType: string) => {
+    if (this.props.authRegistry !== undefined) {
+      const authMethodUI = this.props.authRegistry.getAuthenticationMethod(authType);
+      console.log(`authMethod = ${JSON.stringify(authMethodUI)}`);
+      return authMethodUI;
+    }
+    return null;
   };
 
   onChangeSigV4ServiceName = (service: SigV4ServiceName) => {
@@ -607,6 +618,11 @@ export class CreateDataSourceForm extends React.Component<
             </EuiFormRow>
 
             {/* Create New credentials */}
+            {/* ToDo: Fetch credentials form from registry. getCredentialsForm will return null
+             if that auth method is not present in registry. */}
+            {/* {this.getAuthUIFromRegistry(this.state.auth.type)} */}
+            {this.getAuthUIFromRegistry('token_exchange')?.credentialForm}
+
             {this.state.auth.type === AuthType.UsernamePasswordType
               ? this.renderCreateNewCredentialsForm(this.state.auth.type)
               : null}

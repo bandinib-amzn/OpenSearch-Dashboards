@@ -18,6 +18,7 @@ import { SavedObjectAttributes } from 'src/core/types';
 import { i18n } from '@osd/i18n';
 import { SigV4ServiceName } from '../../data_source/common/data_sources';
 import { OpenSearchDashboardsReactContextValue } from '../../opensearch_dashboards_react/public';
+import { IAuthenticationMethodRegistery } from '../common/auth_registry/authentication_methods_registry';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DataSourceManagementPluginStart {}
@@ -32,6 +33,7 @@ export interface DataSourceManagementContext {
   http: HttpSetup;
   docLinks: DocLinksStart;
   setBreadcrumbs: ManagementAppMountParams['setBreadcrumbs'];
+  authRegistryPromise?: Promise<IAuthenticationMethodRegistery>;
 }
 
 export interface DataSourceTableItem {

@@ -51,8 +51,6 @@ export type DataSourceCredentialsProvider = (
 export interface AuthMethodValues {
   credentialProvider: DataSourceCredentialsProvider;
   authType: AuthType;
-  authFieldsUI?: React.JSX.Element;
-  authComboUIElement?: React.JSX.Element;
 }
 
 export interface DataSourcePluginRequestContext {
