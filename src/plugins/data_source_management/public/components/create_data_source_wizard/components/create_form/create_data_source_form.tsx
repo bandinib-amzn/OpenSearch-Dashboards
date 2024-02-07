@@ -22,7 +22,11 @@ import {
 } from '@elastic/eui';
 import { i18n } from '@osd/i18n';
 import { FormattedMessage } from '@osd/i18n/react';
-import { SigV4Content, SigV4ServiceName } from '../../../../../../data_source/common/data_sources';
+import {
+  AuthTypeContent,
+  SigV4Content,
+  SigV4ServiceName,
+} from '../../../../../../data_source/common/data_sources';
 import {
   AuthType,
   credentialSourceOptions,
@@ -58,7 +62,7 @@ export interface CreateDataSourceState {
   endpoint: string;
   auth: {
     type: AuthType;
-    credentials: UsernamePasswordTypedContent | SigV4Content;
+    credentials: UsernamePasswordTypedContent | SigV4Content | AuthTypeContent;
   };
 }
 
@@ -320,6 +324,10 @@ export class CreateDataSourceForm extends React.Component<
         service: this.state.auth.credentials.service || SigV4ServiceName.OpenSearch,
       } as SigV4Content;
     }
+    // Get credentials from authRegistry.
+    const authMethod = this.props.authRegistry.getAuthenticationMethod(this.state.auth.type);
+    credentials = authMethod?.credentialsFormValues;
+    console.log(`Inside getFormValues > credentials ${credentials}`);
 
     return {
       title: this.state.title,

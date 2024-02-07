@@ -4,10 +4,12 @@
  */
 
 import { EuiSuperSelectOption } from '@elastic/eui';
+import { AuthTypeContent } from 'src/plugins/data_source/common/data_sources';
 
 export interface AuthMethodUIElements {
   credentialForm: React.JSX.Element;
   credentialSourceOption: EuiSuperSelectOption<string>;
+  credentialsFormValues: AuthTypeContent;
 }
 
 export type IAuthenticationMethodRegistery = Omit<

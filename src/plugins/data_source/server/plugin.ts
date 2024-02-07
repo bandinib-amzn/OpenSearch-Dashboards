@@ -119,7 +119,12 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     );
 
     const router = core.http.createRouter();
-    registerTestConnectionRoute(router, dataSourceService, cryptographyServiceSetup);
+    registerTestConnectionRoute(
+      router,
+      dataSourceService,
+      cryptographyServiceSetup,
+      authRegistryPromise
+    );
 
     const registerCredentialProvider = (name: string, authMethodValues: AuthMethodValues) => {
       this.logger.info(
@@ -159,12 +164,6 @@ export class DataSourcePlugin implements Plugin<DataSourcePluginSetup, DataSourc
     authRegistryPromise: Promise<IAuthenticationMethodRegistery>
   ): IContextProvider<RequestHandler<unknown, unknown, unknown>, 'dataSource'> => {
     return (context, req) => {
-      authRegistryPromise.then((auth) => {
-        if (auth !== undefined)
-          logger.info(
-            `Total item found in auth registry is ${auth.getAllAuthenticationMethods().length}`
-          );
-      });
       return {
         opensearch: {
           getClient: (dataSourceId: string) => {

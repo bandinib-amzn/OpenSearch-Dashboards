@@ -9,11 +9,13 @@ import { AuthType, DataSourceAttributes, SigV4ServiceName } from '../../common/d
 import { DataSourceConnectionValidator } from './data_source_connection_validator';
 import { DataSourceServiceSetup } from '../data_source_service';
 import { CryptographyServiceSetup } from '../cryptography_service';
+import { IAuthenticationMethodRegistery } from '../../common/auth_registry';
 
 export const registerTestConnectionRoute = (
   router: IRouter,
   dataSourceServiceSetup: DataSourceServiceSetup,
-  cryptography: CryptographyServiceSetup
+  cryptography: CryptographyServiceSetup,
+  authRegistryPromise: Promise<IAuthenticationMethodRegistery>
 ) => {
   router.post(
     {
@@ -25,28 +27,25 @@ export const registerTestConnectionRoute = (
             endpoint: schema.string(),
             auth: schema.maybe(
               schema.object({
-                type: schema.oneOf([
-                  schema.literal(AuthType.UsernamePasswordType),
-                  schema.literal(AuthType.NoAuth),
-                  schema.literal(AuthType.SigV4),
-                ]),
-                credentials: schema.maybe(
-                  schema.oneOf([
-                    schema.object({
-                      username: schema.string(),
-                      password: schema.string(),
-                    }),
-                    schema.object({
-                      region: schema.string(),
-                      accessKey: schema.string(),
-                      secretKey: schema.string(),
-                      service: schema.oneOf([
-                        schema.literal(SigV4ServiceName.OpenSearch),
-                        schema.literal(SigV4ServiceName.OpenSearchServerless),
-                      ]),
-                    }),
-                  ])
-                ),
+                type: schema.maybe(schema.string()),
+                credentials: schema.any(),
+                // credentials: schema.maybe(
+                //   schema.oneOf([
+                //     schema.object({
+                //       username: schema.string(),
+                //       password: schema.string(),
+                //     }),
+                //     schema.object({
+                //       region: schema.string(),
+                //       accessKey: schema.string(),
+                //       secretKey: schema.string(),
+                //       service: schema.oneOf([
+                //         schema.literal(SigV4ServiceName.OpenSearch),
+                //         schema.literal(SigV4ServiceName.OpenSearchServerless),
+                //       ]),
+                //     }),
+                //   ])
+                // ),
               })
             ),
           }),
@@ -63,6 +62,7 @@ export const registerTestConnectionRoute = (
             cryptography,
             dataSourceId,
             testClientDataSourceAttr: dataSourceAttr as DataSourceAttributes,
+            authRegistryPromise,
           }
         );
 
