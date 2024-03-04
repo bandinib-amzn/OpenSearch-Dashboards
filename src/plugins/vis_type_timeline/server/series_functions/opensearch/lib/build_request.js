@@ -106,5 +106,6 @@ export default function buildRequest(config, tlConfig, scriptedFields, timeout) 
 
   return {
     params: request,
+    dataSourceId: 'f620c970-ca12-11ee-ab29-99c0b09e473b', // Added for testing. This should come as query string parameter.
   };
 }

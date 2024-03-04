@@ -35,7 +35,7 @@ import { RecursiveReadonly } from '@osd/utility-types';
 import { deepFreeze } from '@osd/std';
 
 import { PluginStart } from '../../data/server';
-import { CoreSetup, PluginInitializerContext } from '../../../core/server';
+import { CoreSetup, PluginInitializerContext, DataSourcePluginSetup } from '../../../core/server';
 import { configSchema } from '../config';
 import loadFunctions from './lib/load_functions';
 import { functionsRoute } from './routes/functions';
@@ -51,13 +51,17 @@ export interface TimelinePluginStartDeps {
   data: PluginStart;
 }
 
+interface TimelinePluginSsetupDeps {
+  dataSource: DataSourcePluginSetup;
+}
+
 /**
  * Represents Timeline Plugin instance that will be managed by the OpenSearch Dashboards plugin system.
  */
 export class Plugin {
   constructor(private readonly initializerContext: PluginInitializerContext) {}
 
-  public async setup(core: CoreSetup): void {
+  public async setup(core: CoreSetup, plugins: TimelinePluginSsetupDeps): void {
     const config = await this.initializerContext.config
       .create<TypeOf<typeof configSchema>>()
       .pipe(first())
