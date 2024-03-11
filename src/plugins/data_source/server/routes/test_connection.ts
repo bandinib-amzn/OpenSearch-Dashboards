@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { schema } from '@osd/config-schema';
+import { schema, Type } from '@osd/config-schema';
 import { IRouter, OpenSearchClient } from 'opensearch-dashboards/server';
 import { AuthType, DataSourceAttributes, SigV4ServiceName } from '../../common/data_sources';
 import { DataSourceConnectionValidator } from './data_source_connection_validator';
@@ -20,6 +20,22 @@ export const registerTestConnectionRoute = async (
   customApiSchemaRegistryPromise: Promise<CustomApiSchemaRegistry>
 ) => {
   const authRegistry = await authRegistryPromise;
+  // const authmethods: string[] = [AuthType.NoAuth]; //['type_A', 'type_B'];
+  // const authmethods2 = [
+  //   // 'type_A',
+  //   // 'type_B',
+  //   // '',
+  //   AuthType.NoAuth,
+  //   AuthType.UsernamePasswordType,
+  //   AuthType.SigV4,
+  // ];
+  // // const serviceSchemas = schema.union([authmethods.map((auth) => schema.literal(auth))]);
+  // const testSchema = schema.oneOf(
+  //   authmethods.map((authmethod) => schema.literal(authmethod)) as [Type<string>]
+  // );
+  // const testSchema2 = schema.oneOf(
+  //   authmethods2.map((authmethod) => schema.literal(authmethod)) as [Type<string>]
+  // );
   router.post(
     {
       path: '/internal/data-source-management/validate',
@@ -29,31 +45,35 @@ export const registerTestConnectionRoute = async (
           dataSourceAttr: schema.object({
             endpoint: schema.string(),
             auth: schema.maybe(
-              schema.oneOf([
-                schema.object({
-                  type: schema.literal(AuthType.NoAuth),
-                  credentials: schema.object({}),
-                }),
-                schema.object({
-                  type: schema.literal(AuthType.UsernamePasswordType),
-                  credentials: schema.object({
-                    username: schema.string(),
-                    password: schema.string(),
-                  }),
-                }),
-                schema.object({
-                  type: schema.literal(AuthType.SigV4),
-                  credentials: schema.object({
-                    region: schema.string(),
-                    accessKey: schema.string(),
-                    secretKey: schema.string(),
-                    service: schema.oneOf([
-                      schema.literal(SigV4ServiceName.OpenSearch),
-                      schema.literal(SigV4ServiceName.OpenSearchServerless),
-                    ]),
-                  }),
-                }),
-              ])
+              schema.object({
+                type: allAuthMethodSchema(authRegistry),
+                credentials: schema.oneOf([
+                  schema.conditional(
+                    schema.siblingRef('type'),
+                    AuthType.UsernamePasswordType,
+                    UsernamePasswordTypeSchema,
+                    schema.never()
+                  ),
+                  schema.conditional(
+                    schema.siblingRef('type'),
+                    AuthType.SigV4,
+                    SigV4Schema,
+                    schema.never()
+                  ),
+                  // schema.conditional(
+                  //   schema.siblingRef('type'),
+                  //   AuthType.NoAuth,
+                  //   schema.object({}),
+                  //   schema.never()
+                  // ),
+                  schema.conditional(
+                    schema.siblingRef('type'),
+                    authRegistryAuthMethodSchema(authRegistry),
+                    schema.any(),
+                    schema.never()
+                  ),
+                ]),
+              })
             ),
           }),
         }),
@@ -99,5 +119,47 @@ export const registerTestConnectionRoute = async (
         });
       }
     }
+  );
+};
+
+const UsernamePasswordTypeSchema = schema.object({
+  username: schema.string(),
+  password: schema.string(),
+});
+
+const SigV4Schema = schema.object({
+  region: schema.string(),
+  accessKey: schema.string(),
+  secretKey: schema.string(),
+  service: schema.oneOf([
+    schema.literal(SigV4ServiceName.OpenSearch),
+    schema.literal(SigV4ServiceName.OpenSearchServerless),
+  ]),
+});
+
+const getAuthMethodNamesFromRegistry = (authRegistry: IAuthenticationMethodRegistery): string[] => {
+  const registryAuthMethods = authRegistry.getAllAuthenticationMethods();
+  const registryAuthNames = registryAuthMethods.map((method) => method.name);
+  return registryAuthNames;
+};
+
+const authRegistryAuthMethodSchema = (authRegistry: IAuthenticationMethodRegistery) => {
+  let registryAuthNames = getAuthMethodNamesFromRegistry(authRegistry);
+  registryAuthNames = [...registryAuthNames, AuthType.NoAuth];
+  return schema.oneOf(
+    registryAuthNames.map((authmethod) => schema.literal(authmethod)) as [Type<string>]
+  );
+};
+
+const allAuthMethodSchema = (authRegistry: IAuthenticationMethodRegistery) => {
+  const registryAuthNames = getAuthMethodNamesFromRegistry(authRegistry);
+  const allAuthMethods = [
+    ...registryAuthNames,
+    AuthType.NoAuth,
+    AuthType.UsernamePasswordType,
+    AuthType.SigV4,
+  ];
+  return schema.oneOf(
+    allAuthMethods.map((authmethod) => schema.literal(authmethod)) as [Type<string>]
   );
 };

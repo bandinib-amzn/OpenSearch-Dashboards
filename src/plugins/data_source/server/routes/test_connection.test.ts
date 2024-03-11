@@ -100,6 +100,17 @@ describe(`Test connection ${URL}`, () => {
     },
   };
 
+  const dataSourceAttrForCustomAuth = {
+    endpoint: 'https://test.com',
+    auth: {
+      type: 'type_A',
+      credentials: {
+        role: 'RoleA',
+        region: 'testRegion',
+      },
+    },
+  };
+
   beforeEach(async () => {
     ({ server, httpSetup, handlerContext } = await setupServer());
     customApiSchemaRegistryPromise = Promise.resolve(customApiSchemaRegistry);
@@ -205,12 +216,12 @@ describe(`Test connection ${URL}`, () => {
     expect(result.body.error).toEqual('Bad Request');
   });
 
-  it('full credential with sigV4 auth should success', async () => {
+  it('credential with custom auth should success', async () => {
     const result = await supertest(httpSetup.server.listener)
       .post(URL)
       .send({
         id: 'testId',
-        dataSourceAttr: dataSourceAttrForSigV4Auth,
+        dataSourceAttr: dataSourceAttrForCustomAuth,
       })
       .expect(200);
     expect(result.body).toEqual({ success: true });
